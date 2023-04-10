@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import {
   Category,
+  Options,
   Service,
   Variant,
 } from './interfaces/service/service-structure.interface';
@@ -56,41 +57,112 @@ export class BookingService {
       id: 'var1',
       svc_id: 'svc1',
       type: 'length',
-      title: '18in',
-      price: 30,
       order: 0,
     },
     {
       id: 'var2',
       svc_id: 'svc1',
-      type: 'length',
-      title: '20in',
-      price: 50,
+      type: 'size',
       order: 1,
     },
     {
       id: 'var3',
       svc_id: 'svc1',
-      type: 'length',
+      type: 'include bundles',
+      altVal: {
+        true: 'hair included',
+        false: 'hair excluded',
+      },
+      order: 2,
+    },
+    {
+      id: 'var4',
+      svc_id: 'svc1',
+      type: 'co-wash',
+      altVal: {
+        true: 'co-wash',
+        false: '',
+      },
+      order: 3,
+    },
+  ];
+  private fakeVariantOptionsDB: Options[] = [
+    {
+      id: 'opt1',
+      var_id: 'var1',
+      title: '18in',
+      price: 30,
+      order: 0,
+    },
+    {
+      id: 'opt2',
+      var_id: 'var1',
+      title: '20in',
+      price: 50,
+      order: 1,
+    },
+    {
+      id: 'opt3',
+      var_id: 'var1',
       title: '22in',
       price: 70,
       order: 1,
     },
     {
-      id: 'var4',
-      svc_id: 'svc1',
-      type: 'length',
+      id: 'opt4',
+      var_id: 'var1',
       title: '24in',
       price: 90,
       order: 1,
     },
     {
-      id: 'var5',
-      svc_id: 'svc1',
-      type: 'size',
+      id: 'opt5',
+      var_id: 'var2',
       title: 'large',
       price: 90,
       order: 0,
+    },
+    {
+      id: 'opt6',
+      var_id: 'var2',
+      title: 'medium',
+      price: 90,
+      order: 1,
+    },
+    {
+      id: 'opt7',
+      var_id: 'var2',
+      title: 'small',
+      price: 90,
+      order: 2,
+    },
+    {
+      id: 'opt8',
+      var_id: 'var3',
+      title: 'no',
+      price: 0,
+      order: 0,
+    },
+    {
+      id: 'opt9',
+      var_id: 'var3',
+      title: 'yes',
+      price: 90,
+      order: 1,
+    },
+    {
+      id: 'opt10',
+      var_id: 'var4',
+      title: 'no',
+      price: 0,
+      order: 0,
+    },
+    {
+      id: 'opt11',
+      var_id: 'var4',
+      title: 'yes',
+      price: 35,
+      order: 1,
     },
   ];
 
@@ -123,11 +195,9 @@ export class BookingService {
   }
   getAllServices(): Service[] {
     let res = [];
-    this.fakeServiceDB.forEach((curr) => {
-      let tmp: Service = { ...curr },
-        variants = this.fakeServiceVariantDB.filter(
-          (curr2) => curr2.svc_id === curr.id,
-        );
+    this.fakeServiceDB.forEach((service) => {
+      let tmp: Service = { ...service },
+        variants: Variant[] = this.getVariants(service.id);
       if (variants.length) tmp.variants = variants;
       res.push(tmp);
     });
@@ -135,16 +205,14 @@ export class BookingService {
   }
   getServiceById(id): Service | string {
     let xid,
-      res = this.fakeServiceDB.find((curr) => {
-        if (curr.id === id) {
-          xid = curr.id;
+      res = this.fakeServiceDB.find((service) => {
+        if (service.id === id) {
+          xid = service.id;
           return true;
         }
         return false;
       }),
-      variants: Variant[] = this.fakeServiceVariantDB.filter(
-        (curr) => curr.svc_id === xid,
-      );
+      variants: Variant[] = this.getVariants(id);
 
     if (variants.length) res.variants = variants;
     return res || 'No service found with provided ID.';
@@ -158,9 +226,7 @@ export class BookingService {
         }
         return false;
       }),
-      variants: Variant[] = this.fakeServiceVariantDB.filter(
-        (curr) => curr.svc_id === id,
-      );
+      variants: Variant[] = this.getVariants(id);
 
     if (variants.length) res.variants = variants;
     return res || 'No services found with provided SKU.';
@@ -245,6 +311,18 @@ export class BookingService {
     }
 
     return parsedSKU;
+  }
+
+  private getVariants(serviceId): Variant[] {
+    let variants: Variant[] = this.fakeServiceVariantDB.filter(
+      (variant) => variant.svc_id === serviceId,
+    );
+    variants.forEach((variant) => {
+      variant.options = this.fakeVariantOptionsDB.filter(
+        (option) => option.var_id === variant.id,
+      );
+    });
+    return variants;
   }
 }
 
